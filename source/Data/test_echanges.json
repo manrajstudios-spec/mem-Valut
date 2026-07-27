@@ -1,0 +1,77 @@
+[
+  {
+    "exchange_id": 1,
+    "user": "I finally started university this week. Classes are still mostly introductions.",
+    "assistant": "That first week is usually more orientation than actual coursework."
+  },
+  {
+    "exchange_id": 2,
+    "user": "I am studying computer science in India, but later I want to do my master's in Germany or Switzerland.",
+    "assistant": "That gives you several years to build projects, internships, and a strong academic profile."
+  },
+  {
+    "exchange_id": 3,
+    "user": "For explanations I prefer understanding the actual maths first. Analogies sometimes confuse me.",
+    "assistant": "I will focus on equations and mechanics before adding interpretations."
+  },
+  {
+    "exchange_id": 4,
+    "user": "I am building a project called Mem Vault. It will extract memories from conversations and retrieve them using custom graphs.",
+    "assistant": "So Mem Vault combines structured extraction, semantic routing, and graph-based retrieval."
+  },
+  {
+    "exchange_id": 5,
+    "user": "I decided not to use a vector database for Mem Vault. I want NumPy search and my own graph implementation.",
+    "assistant": "That gives you more control over routing, traversal, scoring, and benchmarking."
+  },
+  {
+    "exchange_id": 6,
+    "user": "The project will have general memory, separate project memories, user facts, preferences, events, decisions, and goals.",
+    "assistant": "Those categories can use different update and retrieval behaviour."
+  },
+  {
+    "exchange_id": 7,
+    "user": "For project storage I think one project memory table with a project_id is cleaner than creating a database table for every project.",
+    "assistant": "Yes, it preserves logical separation without producing hundreds of physical tables."
+  },
+  {
+    "exchange_id": 8,
+    "user": "Actually project graphs should still be separate for each project even if the memories share one table.",
+    "assistant": "That keeps local graph traversal isolated while simplifying persistent storage."
+  },
+  {
+    "exchange_id": 9,
+    "user": "My laptop has an RTX 3050 with 4 GB VRAM, so I run the embedding model on CPU and Ollama on GPU.",
+    "assistant": "That resource split should reduce VRAM pressure."
+  },
+  {
+    "exchange_id": 10,
+    "user": "I use multi-qa-mpnet-base-dot-v1 for embeddings, and I am keeping the embeddings unnormalized because it was trained for dot-product retrieval.",
+    "assistant": "Then raw inner-product scoring is consistent with the model's intended retrieval setup."
+  },
+  {
+    "exchange_id": 11,
+    "user": "Today I fixed the graph insertion code so neighbours are stored as Node references instead of integer indices.",
+    "assistant": "That removes repeated index lookups, although persistence will need to handle object references."
+  },
+  {
+    "exchange_id": 12,
+    "user": "Wait, I may keep integer indices after all because saving the graph could be simpler. I have not decided yet.",
+    "assistant": "Then the graph representation decision should remain marked as unresolved."
+  },
+  {
+    "exchange_id": 13,
+    "user": "My current goal is to finish the extractor and memory handler before adding the final answer-generation layer.",
+    "assistant": "That gives you a clean milestone: extraction and storage first, generation afterward."
+  },
+  {
+    "exchange_id": 14,
+    "user": "I do not care about deployment right now. I want the local system working and benchmarked first.",
+    "assistant": "So deployment should not be included in the current project scope."
+  },
+  {
+    "exchange_id": 15,
+    "user": "Anyway I am going to eat now. I have been debugging this all morning.",
+    "assistant": "Good call. A food break is cheaper than debugging with a melted brain."
+  }
+]

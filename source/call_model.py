@@ -6,8 +6,8 @@ chat_model = "granite4.1:3b"
 embeddor = SentenceTransformer("multi-qa-mpnet-base-dot-v1")
 # chat(model=chat_model,messages=[],keep_alive=-1)             
 
-def ask_model(hist):
-    response:ChatResponse = chat(model=chat_model,messages=hist)
+def ask_model(hist,schema=None):
+    response:ChatResponse = chat(model=chat_model,messages=hist,format=schema)
     
     return response.message.content
 
