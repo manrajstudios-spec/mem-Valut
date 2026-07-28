@@ -55,6 +55,21 @@ def save_to_mem(exchanges:list[any]):
     np.vstack(new_group_mean)
     
     grouped_sims = new_group_mean @ mean_old_groups.T
+    old_keywords = [group.key_words for group in old_groups]
     
     for new_group_chats,sim_mit_old_group_embeddings in zip(new_grouped_chats,grouped_sims):
         new_keywords = make_keywords(new_grouped_chats)
+        
+        total_score = []
+        
+        for keyword,key_value in new_keywords:
+            cur = 0
+            for old_keyword,old_key_value in old_keywords:
+                if keyword in old_keyword   :
+                    cur += old_key_value
+                    cur *= key_value
+                    
+            total_score.append(cur)
+
+    for sim in grouped_sims:
+        pass

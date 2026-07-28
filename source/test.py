@@ -96,9 +96,6 @@ new_sents = [
 
 keywords = make_keywords(new_sents)
 
-for key in keywords:
-    print(keywords)
-    print()
 """
 old_groups = [group1,group2,group3,group4,group5]
 
