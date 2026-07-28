@@ -17,7 +17,7 @@ sentences = [
     "I want to apply for a machine learning internship in Germany during university."
 ]
 
-def make_graph(embeddings,graph_name="ABC",k=5):
+def make_graph(embeddings,graph_name="ABC",k=5,min_samples_per_leaf=5,threshold=0.5):
     if embeddings.ndim == 1: embeddings = embeddings.reshape(1,-1)
     if len(embeddings) == 1:
         graph = [Node(value=embeddings[0])]
@@ -30,7 +30,7 @@ def make_graph(embeddings,graph_name="ABC",k=5):
     
     k = min(k,len(scores)-1)
 
-    similars = np.argsort(scores,axis=-1)[::-1][:,-k:]
+    similars = scores[scores >= threshold]
 
     graph = [Node(neighbours=[graph[i] for i in similar],value=embedding) for embedding,similar in zip(embeddings,similars)]
 
@@ -64,6 +64,8 @@ def add_to_graph(to_add,graph=[]):
         if sim + offset >= min_threshold:
             if sim > min_threshold:
                 min_threshold = sim
+                if min_threshold + offset < sim:
+                    similar.clear()
             
             similars.add(cur_node)
             
@@ -102,6 +104,8 @@ def get_similar(query_embed,graph=[]):
         if sim + offset >= min_threshold:
             if sim > min_threshold:
                 min_threshold = sim
+                if min_threshold + offset < sim:
+                    similar.clear()
                 
             similar.add(cur_node)
             

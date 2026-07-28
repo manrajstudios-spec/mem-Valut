@@ -1,5 +1,5 @@
 import numpy as np
-from call_model import embed_msg
+from call_model import embed_msg,make_keywords
 from sentence_transformers import util 
 
 group1 = [
@@ -94,7 +94,12 @@ new_sents = [
     "Chess players often plan several moves before touching a piece."
 ]
 
+keywords = make_keywords(new_sents)
 
+for key in keywords:
+    print(keywords)
+    print()
+"""
 old_groups = [group1,group2,group3,group4,group5]
 
 old_group_embeds = [embed_msg(group,normalize=False) for group in old_groups]
@@ -122,8 +127,8 @@ print(group_means.shape)
 sims = util.dot_score(group_means,old_group_mean)
 print(sims)
 
-threshold = 0.9   
+threshold = 0.35
 
 for sim in sims:
-    print(sim >=threshold)
+    print(sim >=threshold)"""
 
