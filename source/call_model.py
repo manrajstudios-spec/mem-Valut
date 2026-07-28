@@ -11,6 +11,5 @@ def ask_model(hist,schema=None):
     
     return response.message.content
 
-def embed_msg(messages):
-    return embeddor.encode(messages,normalize_embeddings=False,convert_to_numpy=True)
-
+def embed_msg(messages,normalize=False):
+    return embeddor.encode(messages,convert_to_numpy=True,normalize_embeddings=True)

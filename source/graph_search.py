@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from node import Node
+from classes import Node
 from call_model import embed_msg
 from sentence_transformers import util
 
@@ -30,7 +30,7 @@ def make_graph(embeddings,graph_name="ABC",k=5):
     
     k = min(k,len(scores)-1)
 
-    similars = np.argpartition(scores,axis=-1,kth=-k)[:,-k:]
+    similars = np.argsort(scores,axis=-1)[::-1][:,-k:]
 
     graph = [Node(neighbours=[graph[i] for i in similar],value=embedding) for embedding,similar in zip(embeddings,similars)]
 
@@ -73,6 +73,8 @@ def add_to_graph(to_add,graph=[]):
     new_node = Node(neighbours=list(similars),value=to_add)
     
     for similar in similars:
+        if len(cur_node.neighbours) >= min_samples_per_leaf: continue
+        
         similar.neighbour.append(new_node)
          
     graph.append(new_node)
