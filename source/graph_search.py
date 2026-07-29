@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from classes import Node
-from call_model import embed_msg
+from call_model import make_embeddings
 from sentence_transformers import util
 
 sentences = [
@@ -115,4 +115,4 @@ def get_similar(query_embed,graph=[]):
     return list(similar)
 
 if __name__ == "__main__":
-    make_graph(embed_msg(sentences))
+    make_graph(make_embeddings(sentences))

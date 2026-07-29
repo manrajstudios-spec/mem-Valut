@@ -21,7 +21,7 @@ def ask_model(hist,schema=None):
     
     return response.message.content
 
-def embed_msg(messages,normalize=False):
+def make_embeddings(messages,normalize=False):
     return embeddor.encode(messages,convert_to_numpy=True,normalize_embeddings=normalize)
 
 def make_keywords(data):

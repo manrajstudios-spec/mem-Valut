@@ -2,10 +2,9 @@ import json
 import pickle
 import numpy as np
 import pandas as pd
-from classes import Group
-from call_model import embed_msg
+from call_model import make_embeddings
 from sentence_transformers import util
-from call_model import embed_msg,ask_model,make_keywords
+from call_model import make_embeddings,ask_model,make_keywords
 from graph_search import make_graph,get_similar,add_to_graph
 
 test_exchanges = []
@@ -13,63 +12,59 @@ test_exchanges = []
 with open("Data/test_exchanges.json",'r') as file:
     test_exchanges = json.load(file)
     
+def get_old_data():
+    stored_groups = pickle.load("groups.pickel")
+    stored_embeddings = np.load("all_embeddings.npy")
+    stored_keywords = pd.read_csv("all_keywords.csv")
+    stored_chats = pd.read_csv("all_chats.csv")
+    
+    return stored_groups,stored_embeddings,stored_keywords,stored_chats
 
-def make_groups(exchanges:list[any]):
-    to_embed = []
+def add_to_mem(exchanges):
+    embedded_exchanges = make_embeddings(exchanges,normalize=False)
+    tuple_keywords = make_keywords(exchanges)
     
-    for exchange in exchanges:
-        to_embed.append(f"user: {exchange["user"]}\nassistant: {exchange["assistant"]}")
+    keywords = []
     
-    embeddings = embed_msg(exchanges)
+    for k in tuple_keywords:
+        to_add = {}
+        for keyword,value in k:
+            to_add[keyword] = value
+        keywords.append(to_add)
     
-    grouped = util.community_detection(embeddings,threshold=0.6) 
+    groups = util.community_detection(embedded_exchanges,threshold=0.45,min_community_size=1,show_progress_bar=True)
     
-    grouped_embeddings = [[embeddings[i] for i in group] for group in grouped]
-    grouped_exchanges = [[exchanges[i] for i in group] for group in grouped]
+    grouped_exchanges = [[exchanges[g] for g in group] for group in groups]
+    grouped_embeddings = [[embedded_exchanges[g] for g in group] for group in groups]
+    grouped_keywords = [[keywords[g] for g in group] for group in groups]
     
-    return grouped_exchanges,grouped_embeddings
+    group_mean = [] 
     
-def load_mem():
-    old_chats = pd.read_csv("Data/chat_mem.csv")
-    chat_groups = pickle.load("Data/mem_groups.pickle")
-    old_embeddings = np.load("Data/mem_embeddings.npy")
-    mean_old_groups = np.load("Data/mem_mean.npy")
+    for group_e in grouped_embeddings:
+        group_mean.append(np.vstack(group_e))
     
+    grouped_keywords_scored = []
     
-    return chat_groups.to_list(),old_chats,old_embeddings,mean_old_groups
-    
-def save_to_mem(exchanges:list[any]):
-    threshold = 0.45
-    old_groups,old_chats,old_embeddings,mean_old_groups = load_mem() # mem groups array of arrays # mem chats pandas df cols chats,topics,mem_embeddings array of embeddings
-    
-    new_grouped_chats,new_grouped_embeddings = make_groups(exchanges=exchanges)
-    
-    new_group_mean = []
-    
-    for ge in new_grouped_embeddings:
-        if ge.ndim == 1:
-            ge = ge.reshape(1,-1)
+    for group_k in grouped_keywords:
+        to_add = {}
         
-        new_group_mean.append(ge.mean(axis=0))        
-    
-    np.vstack(new_group_mean)
-    
-    grouped_sims = new_group_mean @ mean_old_groups.T
-    old_keywords = [group.key_words for group in old_groups]
-    
-    for new_group_chats,sim_mit_old_group_embeddings in zip(new_grouped_chats,grouped_sims):
-        new_keywords = make_keywords(new_grouped_chats)
-        
-        total_score = []
-        
-        for keyword,key_value in new_keywords:
-            cur = 0
-            for old_keyword,old_key_value in old_keywords:
-                if keyword in old_keyword   :
-                    cur += old_key_value
-                    cur *= key_value
-                    
-            total_score.append(cur)
+        for keyword,value in zip(group_k.keys(),group_k.values()):
+            stored = to_add.get(keyword, 0)
+            to_add[keyword] = stored + value * (1 - stored)
+            
+        grouped_keywords_scored.append(to_add)
 
-    for sim in grouped_sims:
-        pass
+    stored_groups,stored_embeddings,stored_keywords,stored_chats = get_old_data()
+
+    
+    def save_new_group(embeddings,chats,keywords,stored_groups,stored_embeddings,stored_keywords,stored_chats):
+        new_group_id = len(stored_groups)
+        old_len = len(chats)
+        
+        new_embeddings = np.vstack([stored_embeddings,embeddings])
+        
+        new_keywords = stored_keywords + keywords
+        new_chats = stored_chats + chats
+        
+        new_group = {"group_id":new_group_id,"members":[i + old_len for i in range(len(chats))]}
+        
