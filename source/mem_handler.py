@@ -47,6 +47,22 @@ def add_to_mem(exchanges):
         for keyword,value in k:
             to_add[keyword] = value
         keywords.append(to_add)
+
+    new_sim = embedded_exchanges @ embedded_exchanges.T
+    
+    arranged = np.arange(new_sim.shape[0])
+    
+    new_sim[arranged,arranged] = -np.inf
+        
+    for i,keyword,value in zip(range(len(keywords)),keywords.keys(),keywords.values()):
+        for k,inner_keyword,inner_value in zip(range(len(keywords)),keywords.keys(),keywords.values()):
+            sim = 0
+            if i == k: continue
+            
+            if keyword in inner_keyword:
+                sim += value + inner_value
+        
+            new_sim[i,k] += sim * 0.6    
     
     groups = util.community_detection(embedded_exchanges,threshold=0.45,min_community_size=1,show_progress_bar=True)
     
@@ -61,7 +77,6 @@ def add_to_mem(exchanges):
         stacked= np.vstack(group_e)
         grouped_embeddings_stacked.append(stacked)
         group_mean.append(np.mean(stacked,axis =0))
-        
         
     grouped_keywords_scored = []
     
@@ -78,7 +93,9 @@ def add_to_mem(exchanges):
 
     threshold = 0.45
     
-    for group_mean,new_keywords,new_embedding,new_chats in zip(groups_mean,grouped_keywords,grouped_embeddings,grouped_exchanges):
+    groups_to_add = []
+    
+    for group_mean,new_keywords,new_embedding,new_chats in zip(groups_mean,grouped_keywords,grouped_embeddings_stacked,grouped_exchanges):
         selected_groups = []
         
         for old_group in stored_groups:
@@ -100,12 +117,17 @@ def add_to_mem(exchanges):
             
             if sim >= threshold:
                 selected_groups.append(old_group)
-            
+                
+        stored_embeddings = np.concat(stored_embeddings,new_embedding)    
+        old_len = len(stored_chats)
+        stored_chats.extend(new_chats)
+        
         if not selected_groups:
-            stored_embeddings.extend()
-            stored_chats.extend()
-            continue
-            
+            new_group = Group(group_id=len(groups)+len(groups_to_add),members=[i + old_len for i in range(len(new_chats))]) 
+            groups_to_add.append(new_group)
+            continue 
+        
         for selected_group in selected_groups:
-            pass
+            selected_group.members.extend([i+old_len for i in range(len(new_chats))])
+        
         
