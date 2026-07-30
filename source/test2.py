@@ -32,19 +32,9 @@ new_sents = [
 
 embeddings = make_embeddings(new_sents)
 
-groups = util.community_detection(embeddings=embeddings,threshold=0.25,min_community_size=1)
-
-grouped_embeddings= [[embeddings[g] for g in group] for group in groups]
-
-grouped_embeddings_stacked = []
-
-for group in grouped_embeddings:
-    group = np.vstack(group)
-    grouped_embeddings_stacked.append(group)
-
-grouped_embeddings = np.stack(grouped_embeddings)
+embeddings = np.vstack(embeddings)
+print(embeddings.shape)
     
-print(grouped_embeddings.shape)
     
 group5 = [
     "I am developing a memory system called Mem Vault.",
@@ -65,3 +55,7 @@ g5_embeddings = make_embeddings(group5)
 g5_embeddings = np.vstack(g5_embeddings)
 
 print(g5_embeddings.shape)
+
+h = np.concat([embeddings,g5_embeddings])
+
+print(f"V stack: {h.shape}\nH stack: {h.shape}")
