@@ -1,61 +1,46 @@
 import numpy as np
-from sentence_transformers import util
-from call_model import make_embeddings
 
-new_sents = [
-    "I trained a small transformer on the TinyStories dataset.",
-    "The model uses rotary positional embeddings in its attention layers.",
-    "Training stopped because my laptop became too hot.",
-    "I may use a cloud GPU for the next training run.",
+sims = np.array([
+    [-np.inf,0.8,0.1,0.1,0.1,0.1,0.1,0.1],
+    [0.8,-np.inf,0.8,0.1,0.1,0.1,0.1,0.1],
+    [0.1,0.8,-np.inf,0.1,0.1,0.1,0.1,0.1],
+    [0.1,0.1,0.1,-np.inf,0.8,0.1,0.1,0.1],
+    [0.1,0.1,0.1,0.8,-np.inf,0.8,0.1,0.1],
+    [0.1,0.1,0.1,0.1,0.8,-np.inf,0.8,0.1],
+    [0.1,0.1,0.1,0.1,0.1,0.8,-np.inf,0.8],
+    [0.1,0.1,0.1,0.1,0.1,0.1,0.8,-np.inf]
+])
 
-    "My university hostel was already fully booked.",
-    "I started looking for a paying guest room near campus.",
-    "My parents were worried about the safety of the new area.",
+threshold = 0.5
+groups = []
+last_groups = []
 
-    "I am building a browser extension for YouTube Music.",
-    "The extension reads the first ten songs in the current queue.",
-    "A classifier decides whether the shuffled song order is good.",
-    "The backend sends the playlist score using FastAPI.",
-
-    "The walls of my room were recently covered with putty.",
-    "I want to install wallpaper and a false ceiling.",
-    "The gaming table will be placed near the window.",
-
-    "A solar eclipse happens when the Moon blocks sunlight from reaching Earth.",
-    "Elephants can recognize themselves in mirrors.",
-    "The bakery near my house sells fresh bread every morning.",
-    "A broken keyboard key can sometimes be fixed by cleaning underneath it.",
-    "Rainwater collected in open containers can attract mosquitoes.",
-    "Chess players often plan several moves before touching a piece."
-]
-
-
-embeddings = make_embeddings(new_sents)
-
-embeddings = np.vstack(embeddings)
-print(embeddings.shape)
+for i,sim in enumerate(sims):
+    sim = np.argwhere(sim>=threshold).flatten()
+    sim = sim[sim > i].tolist()
     
+    sim.append(i)
     
-group5 = [
-    "I am developing a memory system called Mem Vault.",
-    "The system stores facts, preferences, decisions, and goals.",
-    "Each saved memory will also contain an embedding vector.",
-    "Similar memories will be grouped into topic clusters.",
-    "A mean embedding can represent the overall meaning of a cluster.",
-    "BM25 can detect important keywords inside stored conversations.",
-    "Dense embeddings are better at finding semantic similarities.",
-    "Sparse and dense retrieval scores can be combined.",
-    "A router will decide whether the query needs personal memory.",
-    "The retrieved memories will be passed to the main answering model."
-]
+    if not last_groups:
+        last_groups.append(set(sim))
+        continue    
+    
+    if last_groups:
+        sim = set(sim)
+        founded = sim.copy()
+        groups = []
+        
+        for last in last_groups:
+            if last & founded:
+               founded |= last
+            else:
+                groups.append(last)
+        
+        if not founded:
+            groups.append(sim)
+        else:
+            groups.append(founded)  
+                  
+        last_groups = groups
 
-
-g5_embeddings = make_embeddings(group5)
-
-g5_embeddings = np.vstack(g5_embeddings)
-
-print(g5_embeddings.shape)
-
-h = np.concat([embeddings,g5_embeddings])
-
-print(f"V stack: {h.shape}\nH stack: {h.shape}")
+print(last_groups)

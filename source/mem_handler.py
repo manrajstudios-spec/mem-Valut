@@ -30,7 +30,6 @@ def save_new_group(embeddings,chats,keywords,stored_groups,stored_embeddings,sto
     
     new_keywords = stored_keywords + keywords
     new_chats = stored_chats + chats
-    
 
     new_group = Group(group_id=new_group_id,members=[i+old_len for i in range(len(chats))])
 
@@ -49,23 +48,74 @@ def add_to_mem(exchanges):
         keywords.append(to_add)
 
     new_sim = embedded_exchanges @ embedded_exchanges.T
+    np.fill_diagonal(new_sim, -np.inf)
     
-    arranged = np.arange(new_sim.shape[0])
+    keyword_score = []
     
-    new_sim[arranged,arranged] = -np.inf
-        
-    for i,keyword,value in zip(range(len(keywords)),keywords.keys(),keywords.values()):
-        for k,inner_keyword,inner_value in zip(range(len(keywords)),keywords.keys(),keywords.values()):
-            sim = 0
-            if i == k: continue
+    for i,outer in enumerate(keywords):
+        to_Add = []
+        for k,inner in enumerate(keywords):
+            score = 0
             
-            if keyword in inner_keyword:
-                sim += value + inner_value
+            if k == i:
+                to_Add.append(0)
+                continue
+            
+            for keyword,value in zip(outer.keys(),outer.values()):
+                if keyword in inner.keys():
+                    score += value + inner[keyword]
+
+            to_Add.append(score)
         
-            new_sim[i,k] += sim * 0.6    
+        keyword_score.append(to_Add)
+        
+    for i,row in enumerate(keyword_score):
+        for k ,sim in enumerate(row):
+            new_sim[i,k] *= np.log1p(sim)
+            
+    groups = []
     
-    groups = util.community_detection(embedded_exchanges,threshold=0.45,min_community_size=1,show_progress_bar=True)
+    threshold = 0.45
     
+    for i,sim in enumerate(new_sim):
+        to_add = np.argwhere(sim>= threshold)
+        
+        to_add = np.argwhere(to_add >=i)
+        
+    
+    threshold = 0.5
+    last_groups = []
+
+    for i,sim in enumerate(new_sim):
+        sim = np.argwhere(sim>=threshold).flatten()
+        sim = sim[sim > i].tolist()
+        
+        sim.append(i)
+        
+        if not last_groups:
+            last_groups.append(set(sim))
+            continue    
+        
+        if last_groups:
+            sim = set(sim)
+            founded = sim.copy()
+            groups = []
+            
+            for last in last_groups:
+                if last & founded:
+                    founded |= last
+                else:
+                    groups.append(last)
+            
+            if not founded:
+                groups.append(sim)
+            else:
+                groups.append(founded)  
+                    
+            last_groups = groups
+    
+    groups = last_groups
+        
     grouped_exchanges = [[exchanges[g] for g in group] for group in groups]
     grouped_embeddings = [[embedded_exchanges[g] for g in group] for group in groups]
     grouped_keywords = [[keywords[g] for g in group] for group in groups]
@@ -76,16 +126,17 @@ def add_to_mem(exchanges):
     for group_e in grouped_embeddings:
         stacked= np.vstack(group_e)
         grouped_embeddings_stacked.append(stacked)
-        group_mean.append(np.mean(stacked,axis =0))
+        groups_mean.append(np.mean(stacked,axis =0))
         
     grouped_keywords_scored = []
     
-    for group_k in grouped_keywords:
+    for row in grouped_keywords:
         to_add = {}
+        for group_k in row: 
         
-        for keyword,value in zip(group_k.keys(),group_k.values()):
-            stored = to_add.get(keyword, 0)
-            to_add[keyword] = stored + value * (1 - stored)
+            for keyword,value in zip(group_k.keys(),group_k.values()):
+                stored = to_add.get(keyword, 0)
+                to_add[keyword] = stored + value * (1 - stored)
             
         grouped_keywords_scored.append(to_add)
 
@@ -129,5 +180,4 @@ def add_to_mem(exchanges):
         
         for selected_group in selected_groups:
             selected_group.members.extend([i+old_len for i in range(len(new_chats))])
-        
         
