@@ -14,79 +14,49 @@ with open("Data/test_exchanges.json",'r') as file:
     test_exchanges = json.load(file)
     
 def get_old_data():
-    stored_groups = pickle.load("groups.pickel")
     stored_embeddings = np.load("all_embeddings.npy")
-    stored_keywords = pd.read_csv("all_keywords.csv")
-    stored_chats = pd.read_csv("all_chats.csv")
+    
+    stored_groups,stored_keywords,stored_exchanges = pickle.load("exchanges_keywords.pickle")
     stored_mean = np.load("all_means.npy")
     
-    return stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean
-
-def save_new_group(embeddings,chats,keywords,stored_groups,stored_embeddings,stored_keywords,stored_chats):
-    new_group_id = len(stored_groups)
-    old_len = len(stored_chats)
+    return stored_groups,stored_embeddings,stored_keywords,stored_exchanges,stored_mean
     
-    new_embeddings = np.vstack([stored_embeddings,embeddings])
-    
-    new_keywords = stored_keywords + keywords
-    new_chats = stored_chats + chats
 
-    new_group = Group(group_id=new_group_id,members=[i+old_len for i in range(len(chats))])
+def save_data(groups,embeddings,exchanges,mean,keywords):
+    pickle.dump((groups,exchanges,keywords),"exchanges_keywords.pickle")
+    np.save("all_embeddings",embeddings)
+    np.save("all_means",mean)
 
-    new_groups = stored_groups + new_group
+def make_groups(exchanges):
+    embeddings = make_embeddings(exchanges)
     
-def add_to_mem(exchanges):
-    embedded_exchanges = make_embeddings(exchanges,normalize=False)
+    embedding_sim = embeddings @ embeddings.T    
     tuple_keywords = make_keywords(exchanges)
     
-    keywords = []
-    
-    for k in tuple_keywords:
-        to_add = {}
-        for keyword,value in k:
-            to_add[keyword] = value
-        keywords.append(to_add)
+    keywords = [dict(exchange_keywords) for exchange_keywords in tuple_keywords]    
 
-    new_sim = embedded_exchanges @ embedded_exchanges.T
-    np.fill_diagonal(new_sim, -np.inf)
-    
-    keyword_score = []
-    
+    n = len(exchanges)
+    keywords_score = np.zeros((n,n),dtype=float)
+
     for i,outer in enumerate(keywords):
-        to_Add = []
-        for k,inner in enumerate(keywords):
-            score = 0
-            
-            if k == i:
-                to_Add.append(0)
-                continue
-            
-            for keyword,value in zip(outer.keys(),outer.values()):
-                if keyword in inner.keys():
-                    score += value + inner[keyword]
+        for j in range(i+1,n):
+            inner = keywords[j]
 
-            to_Add.append(score)
-        
-        keyword_score.append(to_Add)
-        
-    for i,row in enumerate(keyword_score):
-        for k ,sim in enumerate(row):
-            new_sim[i,k] *= np.log1p(sim)
-            
-    groups = []
+            score = sum((value+inner[keyword]) for keyword,value in outer.items() if keyword in inner)
+
+            keywords_score[i,j] = score
+            keywords_score[j,i] = score
+
     
-    threshold = 0.45
+    sims = 0.6 * embedding_sim + 0.4 * np.log1p(keywords_score)
     
-    for i,sim in enumerate(new_sim):
-        to_add = np.argwhere(sim>= threshold)
-        
-        to_add = np.argwhere(to_add >=i)
-        
+    np.fill_diagonal(sims,float("-inf"))
     
     threshold = 0.5
+    groups = []
     last_groups = []
 
-    for i,sim in enumerate(new_sim):
+    for i,sim in enumerate(sims):
         sim = np.argwhere(sim>=threshold).flatten()
         sim = sim[sim > i].tolist()
         
@@ -113,71 +83,67 @@ def add_to_mem(exchanges):
                 groups.append(founded)  
                     
             last_groups = groups
-    
-    groups = last_groups
-        
-    grouped_exchanges = [[exchanges[g] for g in group] for group in groups]
-    grouped_embeddings = [[embedded_exchanges[g] for g in group] for group in groups]
-    grouped_keywords = [[keywords[g] for g in group] for group in groups]
-    
-    groups_mean = [] 
-    grouped_embeddings_stacked = []
-    
-    for group_e in grouped_embeddings:
-        stacked= np.vstack(group_e)
-        grouped_embeddings_stacked.append(stacked)
-        groups_mean.append(np.mean(stacked,axis =0))
-        
-    grouped_keywords_scored = []
-    
-    for row in grouped_keywords:
-        to_add = {}
-        for group_k in row: 
-        
-            for keyword,value in zip(group_k.keys(),group_k.values()):
-                stored = to_add.get(keyword, 0)
-                to_add[keyword] = stored + value * (1 - stored)
             
-        grouped_keywords_scored.append(to_add)
+    groups = last_groups
+    
+    grouped_keywords_unpacked = [[keywords[g] for g in group] for group in groups]
+    grouped_keywords = []
+    
+    for group_k in grouped_keywords_unpacked:
+        to_add = {}
+        
+        for keyword,value in group_k.items():
+            to_add[keyword] = to_add.get(keyword,0) + value
+        
+        grouped_keywords.append(to_add)
+    
+    grouped_exchanges = [[exchanges[g] for g in group] for group in groups]
+    grouped_embeddings = [np.vstack([embeddings[i] for i in group]) for group in groups]
+    grouped_mean = [group_e.mean(axis=0) for group_e in grouped_embeddings]    
+    
+    return groups,grouped_exchanges,grouped_embeddings,grouped_mean,grouped_keywords
 
+def save_to_mem(exchanges):
+    groups,grouped_exchanges,grouped_embeddings,grouped_mean,grouped_keywords = make_groups(exchanges)
+    
     stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
-
-    threshold = 0.45
+    
+    threshold = 0.56
     
     groups_to_add = []
     
-    for group_mean,new_keywords,new_embedding,new_chats in zip(groups_mean,grouped_keywords,grouped_embeddings_stacked,grouped_exchanges):
+    for group,group_mean,group_embedidngs,group_keywords,group_exchanges in zip(groups,grouped_mean,grouped_embeddings,grouped_keywords,grouped_exchanges):
         selected_groups = []
         
         for old_group in stored_groups:
-            old_mean = stored_mean[old_group.group_id]
-            overall_keywords = stored_keywords[old_group.group_id]
-
-            embedding_sim = group_mean @ old_mean
-
-            keyword_sim = 0
+            old_id = old_group.grouop_id
+            old_mean = stored_mean[old_id]
+            old_keywords = stored_keywords[old_id]
             
-            for keyword,value in zip(new_keywords.keys(),new_keywords.values()):
-                if keyword in overall_keywords.keys():
-                    keyword_sim += overall_keywords[keyword] + value   
+            mean_sim = group_mean @ old_mean
             
-            if keyword_sim:
-                sim = embedding_sim + np.log1p(keyword_sim)
-            else:
-                sim = embedding_sim
+            keyword_sim = sum(value + old_keywords[keyword]  for keyword,value in group_keywords.items() if keyword in old_keywords)
+            
+            sim = mean_sim * np.log1p(keyword_sim)
             
             if sim >= threshold:
                 selected_groups.append(old_group)
-                
-        stored_embeddings = np.concat(stored_embeddings,new_embedding)    
+        
+        new_group_id = len(stored_groups)
         old_len = len(stored_chats)
-        stored_chats.extend(new_chats)
+        stored_embeddings = np.concat(stored_embeddings,group_embedidngs)
+        stored_chats = stored_chats + group_exchanges
+        
+        new_memebers = [i+old_len for i in range(old_len+len(group_exchanges))]
         
         if not selected_groups:
-            new_group = Group(group_id=len(groups)+len(groups_to_add),members=[i + old_len for i in range(len(new_chats))]) 
+            new_group = Group(group_id=new_group_id,members=new_memebers)
             groups_to_add.append(new_group)
-            continue 
+            continue
         
-        for selected_group in selected_groups:
-            selected_group.members.extend([i+old_len for i in range(len(new_chats))])
-        
+        for group in selected_groups:
+            group.memebers.extend(new_memebers)
+            
+    stored_groups.extend(groups_to_add)
+    
+    save_data()
