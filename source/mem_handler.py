@@ -11,19 +11,31 @@ from graph_search import make_graph,get_similar,add_to_graph
 test_exchanges = []
 
 with open("Data/test_exchanges.json",'r') as file:
-    test_exchanges = json.load(file)
+    test_exchanges = json.load(file)["exchanges"]
     
 def get_old_data():
-    stored_embeddings = np.load("all_embeddings.npy")
+    try:
+        stored_embeddings = np.load("all_embeddings.npy")
+    except:
+        stored_embeddings = np.array([],dtype=np.float32)
+        
+    try:
+        stored_mean = np.load("all_means.npy")
+    except:
+        stored_mean = np.array([],dtype=np.float32)
     
-    stored_groups,stored_keywords,stored_exchanges = pickle.load("exchanges_keywords.pickle")
-    stored_mean = np.load("all_means.npy")
-    
+    try:
+        with open("exchanges_keywords.pickle",'rb') as f:
+            stored_groups,stored_keywords,stored_exchanges = pickle.load(f)
+    except:
+        stored_groups,stored_keywords,stored_exchanges = [],[],[]
+        
     return stored_groups,stored_embeddings,stored_keywords,stored_exchanges,stored_mean
     
 
 def save_data(groups,embeddings,exchanges,mean,keywords):
-    pickle.dump((groups,exchanges,keywords),"exchanges_keywords.pickle")
+    with open("exchanges_keywords.pickle","wb") as f:
+        pickle.dump(obj=(groups,exchanges,keywords),file=f,protocol=pickle.HIGHEST_PROTOCOL)
     np.save("all_embeddings",embeddings)
     np.save("all_means",mean)
 
@@ -92,8 +104,9 @@ def make_groups(exchanges):
     for group_k in grouped_keywords_unpacked:
         to_add = {}
         
-        for keyword,value in group_k.items():
-            to_add[keyword] = to_add.get(keyword,0) + value
+        for dictt in group_k:
+            for keyword,value in dictt.items():
+                to_add[keyword] = to_add.get(keyword,0) + value
         
         grouped_keywords.append(to_add)
     
@@ -105,6 +118,7 @@ def make_groups(exchanges):
 
 def save_to_mem(exchanges):
     groups,grouped_exchanges,grouped_embeddings,grouped_mean,grouped_keywords = make_groups(exchanges)
+    print(groups)
     
     stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
     
@@ -124,14 +138,18 @@ def save_to_mem(exchanges):
             
             keyword_sim = sum(value + old_keywords[keyword]  for keyword,value in group_keywords.items() if keyword in old_keywords)
             
-            sim = mean_sim * np.log1p(keyword_sim)
+            sim = mean_sim * 0.5 + np.log1p(keyword_sim)
             
             if sim >= threshold:
                 selected_groups.append(old_group)
         
         new_group_id = len(stored_groups)
         old_len = len(stored_chats)
-        stored_embeddings = np.concat(stored_embeddings,group_embedidngs)
+        if stored_embeddings.size != 0:
+            stored_embeddings = np.concatenate((stored_embeddings,group_embedidngs))
+        else:
+            stored_embeddings = group_embedidngs
+            
         stored_chats = stored_chats + group_exchanges
         
         new_memebers = [i+old_len for i in range(old_len+len(group_exchanges))]
@@ -142,8 +160,12 @@ def save_to_mem(exchanges):
             continue
         
         for group in selected_groups:
-            group.memebers.extend(new_memebers)
+            group.members.extend(new_memebers)
+            
+            stored_mean[group.group_id] = (stored_mean[group.group_id] + group_mean)/2
             
     stored_groups.extend(groups_to_add)
     
-    save_data()
+    save_data(groups=stored_embeddings,embeddings=stored_embeddings,exchanges=stored_chats,mean=stored_mean,keywords=stored_keywords)
+    
+save_to_mem(test_exchanges)
