@@ -25,4 +25,4 @@ def make_embeddings(messages,normalize=False):
     return embeddor.encode(messages,convert_to_numpy=True,normalize_embeddings=normalize)
 
 def make_keywords(data):
-    return key_bert.extract_keywords(data,diversity=0.4,keyphrase_ngram_range=(1,2),stop_words='english')
+    return key_bert.extract_keywords(data,diversity=0.4,stop_words='english')

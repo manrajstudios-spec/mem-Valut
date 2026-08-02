@@ -1,0 +1,205 @@
+{
+    "ids": [
+        [
+            0,
+            [
+                0
+            ]
+        ],
+        [
+            1,
+            [
+                1
+            ]
+        ],
+        [
+            2,
+            [
+                2
+            ]
+        ],
+        [
+            3,
+            [
+                3
+            ]
+        ],
+        [
+            4,
+            [
+                4
+            ]
+        ],
+        [
+            5,
+            [
+                5,
+                6
+            ]
+        ],
+        [
+            6,
+            [
+                7
+            ]
+        ],
+        [
+            7,
+            [
+                8
+            ]
+        ],
+        [
+            8,
+            [
+                9
+            ]
+        ],
+        [
+            9,
+            [
+                10,
+                11,
+                12,
+                13
+            ]
+        ],
+        [
+            10,
+            [
+                14
+            ]
+        ],
+        [
+            11,
+            [
+                15
+            ]
+        ],
+        [
+            12,
+            [
+                16
+            ]
+        ],
+        [
+            13,
+            [
+                17
+            ]
+        ],
+        [
+            14,
+            [
+                18
+            ]
+        ],
+        [
+            15,
+            [
+                19
+            ]
+        ],
+        [
+            16,
+            [
+                20
+            ]
+        ],
+        [
+            17,
+            [
+                21
+            ]
+        ],
+        [
+            18,
+            [
+                22
+            ]
+        ],
+        [
+            19,
+            [
+                23
+            ]
+        ],
+        [
+            20,
+            [
+                24
+            ]
+        ],
+        [
+            21,
+            [
+                25
+            ]
+        ],
+        [
+            22,
+            [
+                26
+            ]
+        ],
+        [
+            23,
+            [
+                27
+            ]
+        ],
+        [
+            24,
+            [
+                28
+            ]
+        ],
+        [
+            25,
+            [
+                29
+            ]
+        ]
+    ],
+    "exchanges": [
+        "User: Will it be sunny tomorrow?\nBot: It should be mostly sunny with mild temperatures.",
+        "User: Do I need an umbrella today?\nBot: There's a small chance of rain, so it wouldn't hurt.",
+        "User: Tell me another programming joke.\nBot: Why do programmers hate nature? It has too many bugs.",
+        "User: I need a comedy movie recommendation.\nBot: You might enjoy Superbad.",
+        "User: Recommend another action movie.\nBot: John Wick is a great action film.",
+        "User: How do I remove a key from a dictionary?\nBot: You can use del or the pop() method.",
+        "User: How do I add an item to a Python dictionary?\nBot: Assign a value using a new key or use update().",
+        "User: What is Bellman-Ford algorithm?\nBot: It finds shortest paths and supports negative edge weights.",
+        "User: My Wi-Fi signal is weak.\nBot: Move closer to the router or reduce interference.",
+        "User: Websites are taking forever to load.\nBot: Check your internet speed and DNS settings.",
+        "User: Hi there!\nBot: Hello! How can I assist you today?",
+        "User: Good morning!\nBot: Good morning! Hope you have a great day.",
+        "User: Translate 'Good morning' to French.\nBot: Bonjour.",
+        "User: How do you say thank you in German?\nBot: Danke.",
+        "User: What's the largest ocean?\nBot: The Pacific Ocean.",
+        "User: Who wrote Romeo and Juliet?\nBot: William Shakespeare.",
+        "User: Find a cheap hotel in Paris.\nBot: Here are some affordable hotel options.",
+        "User: Book a flight to Tokyo.\nBot: What departure date do you have in mind?",
+        "User: Suggest a healthy breakfast.\nBot: Oatmeal with fruit is a nutritious option.",
+        "User: How much calcium is in milk?\nBot: About 300 mg per cup.",
+        "User: Resume the music.\nBot: Playback resumed.",
+        "User: Lower the volume.\nBot: Volume decreased.",
+        "User: Set a timer for 30 minutes.\nBot: Timer set for 30 minutes.",
+        "User: Remind me to call Mom tomorrow.\nBot: Reminder saved.",
+        "User: Explain reinforcement learning.\nBot: It's a type of machine learning where an agent learns through rewards.",
+        "User: What is gradient descent?\nBot: It's an optimization algorithm used to minimize a loss function.",
+        "User: Convert 5 miles to kilometers.\nBot: About 8.05 kilometers.",
+        "User: How do I make scrambled eggs?\nBot: Beat eggs, cook gently, and stir until set.",
+        "User: What causes inflation?\nBot: Inflation can result from increased demand, rising costs, or monetary policy.",
+        "User: How can I invest my savings?\nBot: Consider diversified investments based on your goals and risk tolerance."
+    ],
+    "keywords": [
+        {
+            "invest": 0.5612,
+            "investments": 0.539,
+            "savings": 0.5126,
+            "diversified": 0.502,
+            "bot": 0.3948
+        }
+    ]
+}
