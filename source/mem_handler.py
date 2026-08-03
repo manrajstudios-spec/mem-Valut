@@ -1,4 +1,5 @@
 import json
+import time
 import pickle
 import numpy as np
 import pandas as pd
@@ -6,7 +7,6 @@ from classes import Group
 from call_model import make_embeddings
 from sentence_transformers import util
 from call_model import make_embeddings,ask_model,make_keywords
-from graph_search import make_graph,get_similar,add_to_graph
 
 test_exchanges = []
 
@@ -61,11 +61,15 @@ def make_groups(exchanges):
             keywords_score[i,j] = score
             keywords_score[j,i] = score
     
-    sims = 0.6 * embedding_sim + 0.4 * np.log1p(keywords_score)
+    print(f"embedding matrix: {embedding_sim}")
     
+    sims = 0.65 * embedding_sim + 0.35 * np.log1p(keywords_score)
+    
+    print(f"final matice: {sims}")
+        
     np.fill_diagonal(sims,float("-inf"))
     
-    threshold = 0.7
+    threshold = 0.4
     groups = []
     last_groups = []
 
@@ -134,37 +138,33 @@ def save_to_mem(exchanges):
             old_id = old_group.group_id
             old_mean = stored_mean[old_id]
             old_keywords = stored_keywords[old_id]
-            
-            print(f"new: {group_mean.shape}; old: {old_mean.shape}")
             mean_sim = group_mean @ old_mean
             
             keyword_sim = sum(value + old_keywords[keyword]  for keyword,value in group_keywords.items() if keyword in old_keywords)
             sim = mean_sim * 0.6 + np.log1p(keyword_sim) * 0.4
-            print(sim)
+            
             if sim >= threshold:
                 selected_groups.append(old_group)
         
         old_len = len(stored_chats)
-        print(f"groupembedidngs {group_embedidngs.shape}")
         
         if stored_embeddings is None:
             stored_embeddings = group_embedidngs.reshape(1,-1)
         else:
             stored_embeddings = np.concatenate((stored_embeddings,group_embedidngs))
       
-        stored_chats = stored_chats + group_exchanges
+        stored_chats.extend(group_exchanges)
         
         new_members = list(range(old_len, old_len + len(group_exchanges)))
-                
+        
         if not selected_groups:
             new_group_id = len(stored_groups) + len(groups_to_add)
-            stored_keywords = [group_keywords]
+            stored_keywords.append(group_keywords)
             
             if stored_mean is None:
                 stored_mean = group_mean.reshape(1,-1)
             else:
-                group_mean = group_mean.reshape(1,-1)
-                stored_mean = np.concatenate((stored_mean,group_mean))
+                stored_mean = np.concatenate((stored_mean,group_mean.reshape(1,-1)))
     
             new_group = Group(group_id=new_group_id,members=new_members)
             groups_to_add.append(new_group)
@@ -177,47 +177,87 @@ def save_to_mem(exchanges):
             mean = stored_mean[idd]
             stored_mean[idd] = (mean * mean.size + group_mean * group_mean.size)/ (mean.size + group_mean.size) 
             
-            for keyword,value in group_keywords:
-                stored_keywords[old_id] = stored_keywords[old_id].get(keyword,0) + value
+            for keyword,value in group_keywords.items():
+                stored_keywords[old_id][keyword] = stored_keywords[old_id].get(keyword,0) + value
             
     stored_groups.extend(groups_to_add)
     
     save_data(groups=stored_groups,embeddings=stored_embeddings,exchanges=stored_chats,mean=stored_mean,keywords=stored_keywords)
 
-def retrieve_major_groups(queries):
+def retrieve_major_groups(queries,stored_groups,stored_keywords,stored_mean):
     embeddings = make_embeddings(queries,True)
+    embeddings = np.stack(embeddings)
     
     tuple_keywords = make_keywords(queries)
     keywords = [dict(exchange_keywords) for exchange_keywords in tuple_keywords]     
-    
-    stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
 
-    selected_groups = []
+    selected_groups = set()
+    
+    threshold = 0.4
+
+    embeddings_sims = embeddings @ stored_mean.T
+    
+    keywords_scores = []
+    
+    for new_keyword in keywords:
+        score = [sum(value + old_keyword_dict[keyword] for keyword,value in new_keyword.items() if keyword in old_keyword_dict) for old_keyword_dict in stored_keywords]    
+        keywords_scores.append(score)
+    
+    keywords_scores = np.array(keywords_scores)
+    
+    final_sims = embeddings_sims * 0.5 + np.log1p(keywords_scores) * 0.5
+    
+    for sim in final_sims:
+        ids = np.argwhere(sim>=threshold).flatten()
+        
+        for i in ids:
+            g = stored_groups[i]
+            selected_groups.add(g)
+
+    print([g.group_id for g in selected_groups])
+    return selected_groups
+
+def rerank(groups,queries):
+    retrived_info = []
+    stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
+    
+    query = "\n".join(queries)
+    
+    embedding = make_embeddings(query)
     
     threshold = 0.5
     
-    for embedding,keyword_dict in zip(embeddings,keywords):
-        for group in stored_groups:
-            group_id = group.group_ids
-            group_mean = stored_mean[group_id]
-            group_keywords = stored_embeddings[group_id]
-            
-            keyword_score = sum(value + group_keywords[keyword] for value,keyword in keyword_dict if keyword in group_keywords)
-            
-            embedding_score = group_mean @ embedding
-            
-            final_score = embedding_score * 0.7 + np.log1p(keyword_score) * 0.2
-            
-            print(final_score)        
-            if final_score >= threshold:
-                selected_groups.append(group)
-
-save_to_mem(test_exchanges)
-
-def rerank(groups,query_embeds):
-    retrived_info = []
-    stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
-
     for group in groups:
-        if group.graph is None:
-            retrived_info
+        embedidngs = stored_embeddings[group.members]
+        exchanges = [stored_chats[i] for i in group.members]
+        
+        sim = (embedding.reshape(1,-1) @ embedidngs.T).flatten()
+        print(sim)
+        selected_ids = np.argwhere(sim>=threshold).flatten()
+
+        selected_exchanges = [exchanges[i] for i in selected_ids]
+        
+        retrived_info.append(selected_exchanges)
+    
+    return retrived_info
+
+def retrieve_info(queries):
+    stored_groups,stored_embeddings,stored_keywords,stored_chats,stored_mean = get_old_data()
+    
+    getting_groups_time = time.monotonic()
+    selected_groups = retrieve_major_groups(queries=queries,stored_groups=stored_groups,stored_keywords=stored_keywords,stored_mean=stored_mean)
+    print(time.monotonic() - getting_groups_time)
+    
+    shorlist_time = time.monotonic()
+    info = rerank(selected_groups,queries)
+    print(time.monotonic() - shorlist_time)
+    
+    return info
+
+queries = [
+    "How do I work with dictionaries in Python?",
+    "What's the best way to add, remove, and merge dictionaries in Python?",
+    "How can I check if a key exists and update a Python dictionary?"
+]
+
+print(retrieve_info(queries=queries))
