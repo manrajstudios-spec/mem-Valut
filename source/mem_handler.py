@@ -189,11 +189,13 @@ def retrieve_major_groups(queries,stored_groups,stored_keywords,stored_mean):
     embeddings = np.stack(embeddings)
     
     tuple_keywords = make_keywords(queries)
+    if isinstance(tuple_keywords[0],tuple):
+        tuple_keywords = [tuple_keywords]
     keywords = [dict(exchange_keywords) for exchange_keywords in tuple_keywords]     
 
     selected_groups = set()
     
-    threshold = 0.4
+    threshold = 0.35
 
     embeddings_sims = embeddings @ stored_mean.T
     
@@ -225,7 +227,7 @@ def rerank(groups,queries):
     
     embedding = make_embeddings(query)
     
-    threshold = 0.5
+    threshold = 0.35
     
     for group in groups:
         embedidngs = stored_embeddings[group.members]
@@ -255,9 +257,8 @@ def retrieve_info(queries):
     return info
 
 queries = [
-    "How do I work with dictionaries in Python?",
-    "What's the best way to add, remove, and merge dictionaries in Python?",
-    "How can I check if a key exists and update a Python dictionary?"
+    "world war II"
 ]
 
-print(retrieve_info(queries=queries))
+print(retrieve_info(queries))
+

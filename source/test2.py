@@ -36,10 +36,7 @@ for i,sim in enumerate(sims):
             else:
                 groups.append(last)
         
-        if not founded:
-            groups.append(sim)
-        else:
-            groups.append(founded)  
+        groups.append(founded)  
                   
         last_groups = groups
 
