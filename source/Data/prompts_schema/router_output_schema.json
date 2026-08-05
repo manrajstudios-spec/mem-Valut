@@ -55,6 +55,12 @@
         "type": "string"
       }
     },
+    "user_preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "user_decisions": {
       "type": "array",
       "items": {
@@ -85,6 +91,7 @@
     "doc_retrieval",
     "rag_retrieval",
     "user_events",
+    "user_preferences",
     "user_decisions",
     "user_tasks"
   ]

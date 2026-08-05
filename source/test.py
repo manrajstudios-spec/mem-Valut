@@ -1,46 +1,34 @@
 import numpy as np
-from call_model import make_embeddings,make_keywords
 
-groups = [
-    "I decided to use Granite 4.1 as the default extraction model for mem-vault.",
-    "The mem-vault system should preserve raw conversations as evidence.",
-    "I want to compare my greedy graph search against FAISS.",
-    "My transformer training slowed down because the model was running partly on CPU."
-]
+image = np.array([[1,2,3,4],
+                  [5,6,7,8],
+                  [9,10,11,12],
+                  [14,15,16,17]])
+num_kernels = 2
+x_kernel = 3
+y_kernel = 3
 
-new_sents = ["I fixed Ollama GPU support by installing the CUDA package.",
-    "I plan to learn reinforcement learning after finishing mem-vault.",
-    "The Unity agent should learn to manage hunger, energy, and money."]
+kernels = np.random.randn(num_kernels,x_kernel,y_kernel)
+bias = np.zeros(num_kernels)
 
-new_emebddings = make_embeddings(new_sents)
-new_emebddings = np.stack(new_emebddings)
 
-group_embeddings = np.stack(make_embeddings(groups))
+final = []
 
-embedding_sim = new_emebddings @ group_embeddings.T
+for k in range(num_kernels):
+    feature_map = []
+    for row in range(image.shape[0] - y_kernel + 1):
+        cur_row = []
+        for col in range(image.shape[1] - x_kernel +1):
+            patch = image[row:row+y_kernel,col:col+x_kernel]
+            
+            result = np.sum(kernels[k] * patch) + bias[k]
+            
 
-new_keywords = make_keywords(new_sents)
-sent_keys = make_keywords(groups)
-
-keywords_group = [dict(x) for x in sent_keys]
-keywords_me = [dict(x) for x in new_keywords]
-
-keyword_score = []
-
-for new_keyword in keywords_me:
-    score = [sum(value+group_key[keyword] for keyword,value in new_keyword.items() if keyword in group_key) for group_key in keywords_group]
-    keyword_score.append(score)
+            cur_row.append(result)
     
-keyword_score = np.array(keyword_score)
+        feature_map.append(cur_row)  
+        
+    final.append(feature_map)  
 
-sims = embedding_sim * 0.7 + 0.3 * np.log1p(keyword_score)
-
-print(sims)
-
-selected_ids = []
-
-for sim in sims:
-    ids = np.argwhere(sim>=0.4).flatten()
-    selected_ids.append(ids)
-
-print(selected_ids)
+final = np.array(final)
+print(final)

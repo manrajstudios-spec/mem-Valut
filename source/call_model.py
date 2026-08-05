@@ -7,7 +7,7 @@ key_bert = KeyBERT()
 
 chat_model = "granite4.1:3b"
 embeddor = SentenceTransformer("multi-qa-distilbert-cos-v1")
-chat(model=chat_model,messages=[],keep_alive=-1)             
+# chat(model=chat_model,messages=[],keep_alive=-1)             
 
 chat_stop_words = [
     'screen', 'page', 'button', 'click', 'clicked', 'clicking', 'link',

@@ -16,6 +16,5 @@ def route_msg(hist):
     return parsed
 
 while True:
-    user_input =input("Enter: ")
-    
-    print(route_msg([{"role":"user","content":user_input}]))    
+    hist  = [{"role":"user","content":"Gpt 5.6 is crazy good"},{"role":"assistant","content":"Yeah It Is"},{"role":"user","content":"Can Yu Get Latest Info About It"}]
+    print(route_msg(hist))

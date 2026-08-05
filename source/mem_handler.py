@@ -10,38 +10,40 @@ from call_model import make_embeddings,ask_model,make_keywords
 
 test_exchanges = []
 
-with open("Data/test_exchanges.json",'r') as file:
+with open("Data/rag_data/test_exchanges.json",'r') as file:
     test_exchanges = json.load(file)["exchanges"]
     
 def get_old_data():
     try:
-        stored_embeddings = np.load("Data/all_embeddings.npy")
+        stored_embeddings = np.load("Data/rag_data/all_embeddings.npy")
     except:
         stored_embeddings = None
         
     try:
-        stored_mean = np.load("Data/all_means.npy")
+        stored_mean = np.load("Data/rag_data/all_means.npy")
     except:
         stored_mean = None
     
     try:
-        with open("Data/exchanges_keywords.pickle",'rb') as f:
-            stored_groups,stored_keywords,stored_exchanges = pickle.load(f)
+        with open("Data/rag_data/exchanges_keywords.pickle",'rb') as f:
+            stored_data = pickle.load(f)
+            return [Group(group_id=g_id,members=members) for g_id,members in stored_data["groups"]],stored_embeddings,stored_data["keywords"],stored_data["exchanges"],stored_mean
     except:
-        stored_groups,stored_keywords,stored_exchanges = [],[],[]
+        return [],stored_embeddings,[],[],stored_mean
         
-    return stored_groups,stored_embeddings,stored_keywords,stored_exchanges,stored_mean
-    
-
 def save_data(groups,embeddings,exchanges,mean,keywords):
-    with open("Data/exchanges_keywords.pickle","wb") as f:
-        pickle.dump(obj=(groups,keywords,exchanges),file=f,protocol=pickle.HIGHEST_PROTOCOL)
-    
-    with open("Data/json_keys.json",'w') as f:
+    with open("Data/rag_data/exchanges_keywords.pickle","wb") as f:
+        pickle.dump({
+            "groups":[(group.group_id,group.members) for group in groups],
+            "keywords":keywords,
+            "exchanges":exchanges
+        },file=f,protocol=pickle.HIGHEST_PROTOCOL)
+        
+    with open("Data/rag_data/json_keys.json",'w') as f:
         json.dump({"ids":[(group.group_id,group.members) for group in groups],"exchanges":exchanges,"keywords":keywords},f,indent=4)
                             
-    np.save("Data/all_embeddings",embeddings)
-    np.save("Data/all_means",mean)
+    np.save("Data/rag_data/all_embeddings",embeddings)
+    np.save("Data/rag_data/all_means",mean)
 
 def make_groups(exchanges):
     embeddings = make_embeddings(exchanges,normalize=True)
