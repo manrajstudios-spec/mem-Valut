@@ -1,4 +1,3 @@
-import numpy
 from keybert import KeyBERT
 from ollama import ChatResponse,chat
 from sentence_transformers import SentenceTransformer
