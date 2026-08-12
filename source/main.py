@@ -18,6 +18,14 @@ def ask_user(to_ask,options=[],empty=False):
                 
 chat_hist = [] # list of dicts goes aas context
 
-
 while True:
+    user_input = ask_user("Enter Your Query: ")
+    
+    if user_input == "q":
+        break
+    
+    if user_input == "n":
+        # docc add system
+        ...
+        
     

@@ -41,7 +41,6 @@ def make_chunks(text,limit=800):
         chunks.append(cur_chunk[:min(len(cur_chunk),limit)])
     
     print(f"Chunk Time: {time.monotonic() - start_time}")
-
     print(f"chunks: {len(chunks)}")
     
     return chunks

@@ -13,8 +13,12 @@ def route_msg(hist):
     json_out = ask_model(prompt+hist,schema=json_schema)
     parsed = json.loads(json_out)
     
-    return parsed
-
-while True:
-    hist  = [{"role":"user","content":"Gpt 5.6 is crazy good"},{"role":"assistant","content":"Yeah It Is"},{"role":"user","content":"Can Yu Get Latest Info About It"}]
-    print(route_msg(hist))
+    web = parsed["websearch"]
+    doc = parsed["doc_retrieval"]
+    rag = parsed["rag_retrieval"]
+    user_prefrences = parsed["user_prefrences"]
+    
+    user_events = parsed["user_events"]
+    user_decisions = parsed["user_decisions"]
+    user_tasks = parsed["user_tasks"]
+    

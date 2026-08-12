@@ -136,10 +136,9 @@ def get_data_doc(queries,table_needed=False):
         
         selected_groups = []
         
-        n = 4
+        n = 5
         for sim in sims:
             ids = np.argsort(sim>=threshold)[-min(n,len(sim)):]
-            
             selected_groups.extend(ids)
             
         selected_groups = set(selected_groups)        
@@ -169,6 +168,7 @@ def get_data_doc(queries,table_needed=False):
                 retrieved_info.append({"tabels":selected_tabels})
     
     return retrieved_info
+            
                      
 if __name__ == "__main__":
     load_docs()
