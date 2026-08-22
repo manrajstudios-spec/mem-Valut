@@ -25,8 +25,6 @@ def search(queries):
     
     keywords = [{m:c for m,c in tuplee} for tuplee in tuple_keywords]
     
-    threshold = 0.4
-    
     retrieved_info = []
     
     with DDGS() as ddgs:
@@ -43,7 +41,7 @@ def search(queries):
                 start_time = time.monotonic()
                 
                 chunks = make_chunks(text)
-                groups, web_keywords, web_embeddings, table_embeds = make_groups(chunks)
+                groups, web_keywords, web_embeddings, _ = make_groups(chunks)
                 
                 grouped_embeddings = [[web_embeddings[g] for g in group] for group in groups]
                 grouped_keywords_unpacked = [[web_keywords[g] for g in group] for group in groups]
@@ -100,8 +98,8 @@ def search(queries):
                     retrieved_info.append({"query":query,"page_title":result["title"],"content":selected_chunks})
 
                 print(f"Comparision Time {time.monotonic() - start_time}")
-                
+    
     return retrieved_info
-                    
+
 if __name__ == "__main__":
     print(search(["Fabel 5 V/S GPT 5.6","Fabel 5 Ban Reason"]))

@@ -1,47 +1,34 @@
+import torch
+import torch.nn.functional as F
+from transformers import AutoTokenizer, AutoModel
 
-nums = [1,1,1,3]
-k = 2
+tokenizer = AutoTokenizer.from_pretrained("microsoft/unixcoder-base")
+model = AutoModel.from_pretrained("microsoft/unixcoder-base")
 
-l = 0
-r = 0
+codes = [
+    """def get_user_by_id(user_id, users):
+    for user in users:
+        if user["id"] == user_id:
+            return user
+    return None""",
 
-max_freq = {}
-max_sum = 1
+    """def find_user(user_id, users):
+    return next(
+        (user for user in users if user.get("id") == user_id),
+        None
+    )"""
+]
 
-cur_freq = {nums[l]:1}
-cur_sum = 1
+inputs = tokenizer(
+    codes,
+    max_limit=500,
+    return_tensors="pt",
+    padding=True,
+)
 
-while True:
-    if l+r+1<len(nums):
-        cur_r = nums[l+r+1]
 
-        found_r_freq = cur_freq.get(cur_r,0)
-        
-        if found_r_freq:
-            if found_r_freq < k:
-                cur_freq[cur_r] += 1
-                cur_sum += 1
-                r += 1
-            else:
-                cur_freq[nums[l]] -= 1
-                l += 1
-                cur_sum -= 1
-                r-=1 
-                
-                if l==r:
-                    break
-        else:
-            cur_freq[cur_r] = 1
-            cur_sum += 1
-            r += 1 
-    else:
-        break
+print(type(inputs))
+print(type(inputs[0]))
+
+print(len(inputs))
     
-    print(cur_freq,cur_sum)
-    if cur_sum > max_sum:
-        max_sum = cur_sum
-
-if cur_sum > max_sum:
-    max_sum = cur_sum 
-
-print(max_sum)

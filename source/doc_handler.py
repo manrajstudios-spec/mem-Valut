@@ -37,7 +37,10 @@ def add_doc(path):
         tabel_dict = tabel.df.to_dict(orient="records")
         table_str = json.dumps(tabel_dict)
         tabels.append(table_str)
-        
+    
+    if not tabels:
+        tabels = None
+    
     text = "\n".join(text_per_page.values())
     
     print(f"tabel text time: {time.monotonic() - start_time}")
@@ -108,8 +111,7 @@ def get_data_doc(queries,table_needed=False):
     start_time = time.monotonic()
     
     retrieved_info = []
-    threshold = 0.35
-    
+        
     for doc in loaded_docs:
         embedding_sim = embeddings @ doc["group_means"].T
         
@@ -138,7 +140,7 @@ def get_data_doc(queries,table_needed=False):
         
         n = 5
         for sim in sims:
-            ids = np.argsort(sim>=threshold)[-min(n,len(sim)):]
+            ids = np.sort(sim)[-min(n,len(sim)):]
             selected_groups.extend(ids)
             
         selected_groups = set(selected_groups)        
@@ -150,15 +152,15 @@ def get_data_doc(queries,table_needed=False):
         print(f"selecting_time {time.monotonic() - start_time}")
         start_time = time.monotonic()
     
-    tabel_threshold = 0.4
+    table_k=4
     if table_needed:
         for doc in loaded_docs:
-            if doc["tabel_embeds"] is not None:
+            if doc["tabels"] is not None:
                 tabels_sim = embeddings @ doc["tabel_embeds"].T
                 selected_tabels = []
                 
                 for sim in tabels_sim:
-                    ids = np.argwhere(sim>= tabel_threshold).flatten()
+                    ids = np.sort(sim)[-min(len(sim,table_k)):]
                     selected_tabels.extend(ids)
                 
                 selected_tabels = set(selected_tabels)
@@ -166,6 +168,8 @@ def get_data_doc(queries,table_needed=False):
                 selected_tabels = [t for i,t in enumerate(doc["tabels"]) if i in selected_tabels]
     
                 retrieved_info.append({"tabels":selected_tabels})
+    else:
+        retrieved_info.append({"tabels":None})
     
     return retrieved_info
             
